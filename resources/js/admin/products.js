@@ -323,9 +323,8 @@ document.addEventListener('DOMContentLoaded', function () {
                             <option value="hidden">Ẩn</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Ảnh biến thể</label>
-                        <input type="file" name="variations[${globalIndex}][image]" class="form-control variation-image-input" style="max-width: 100%;">
+                    <div class="col-md-1">
+                        <input type="file" name="variations[${index}][image]" class="form-control variation-image-input" style="max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                     </div>
                     <div class="col-md-1">
                         <button type="button" class="btn btn-danger btn-sm remove-variation">Xóa</button>

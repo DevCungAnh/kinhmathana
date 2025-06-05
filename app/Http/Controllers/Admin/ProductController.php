@@ -255,6 +255,9 @@ class ProductController extends Controller
                 'gallery_images.*.image' => 'Album ảnh phải chứa các file ảnh.',
                 'gallery_images.*.mimes' => 'Album ảnh phải có định dạng jpeg, png, jpg, hoặc gif.',
                 'gallery_images.*.max' => 'Mỗi ảnh trong album không được lớn hơn 2MB.',
+                'video_path.file' => 'Video sản phẩm phải là một tệp.',
+                'video_path.mimes' => 'Video sản phẩm phải có định dạng mp4, webm hoặc ogg.',
+                'video_path.max' => 'Video sản phẩm không được vượt quá 50MB.',
             ];
 
             $rules = [
@@ -267,6 +270,7 @@ class ProductController extends Controller
                 'product_type' => 'required|in:simple,variable',
                 'sku' => 'required|string|unique:products,sku',
                 'slug' => 'required|string|unique:products,slug',
+                'video_path' => 'nullable|file|mimes:mp4,webm,ogg|max:51200',
                 'variations' => [
                     'required_if:product_type,variable',
                     'array',
@@ -358,6 +362,14 @@ class ProductController extends Controller
                 $product->sale_price = isset($validated['sale_price']) && $validated['sale_price'] !== '' ? (float)$validated['sale_price'] : null;
             } else {
                 $product->stock_quantity = 0; // Sẽ được tính lại sau khi tạo biến thể
+            }
+
+            if ($request->hasFile('video_path')) {
+                $video = $request->file('video_path');
+                if ($video->isValid()) {
+                    $path = $video->store('videos/products', 'public');
+                    $product->video_path = $path;
+                }
             }
 
             if (!$product->save()) {
@@ -541,6 +553,9 @@ class ProductController extends Controller
             'gallery_images.*.image' => 'Ảnh trong thư viện phải là một tệp hình ảnh.',
             'gallery_images.*.mimes' => 'Ảnh trong thư viện phải có định dạng jpg, jpeg, png, gif, webp hoặc tiff.',
             'gallery_images.*.max' => 'Ảnh trong thư viện không được vượt quá 5MB.',
+            'video_path.file' => 'Video sản phẩm phải là một tệp.',
+            'video_path.mimes' => 'Video sản phẩm phải có định dạng mp4, webm hoặc ogg.',
+            'video_path.max' => 'Video sản phẩm không được vượt quá 50MB.',
         ];
 
         $rules = [
@@ -565,6 +580,7 @@ class ProductController extends Controller
             'featured_image' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp,tiff|max:5120',
             'gallery_images' => 'nullable|array',
             'gallery_images.*' => 'image|mimes:jpg,jpeg,png,gif,webp,tiff|max:5120',
+            'video_path' => 'nullable|file|mimes:mp4,webm,ogg|max:51200',
         ];
 
         if ($product->product_type === 'simple') {
@@ -608,6 +624,18 @@ class ProductController extends Controller
         } else {
             $updateData['stock_quantity'] = 0; // Sẽ được tính lại từ biến thể
             // Không gán sku cho sản phẩm biến thể
+        }
+
+        if ($request->hasFile('video_path')) {
+            $video = $request->file('video_path');
+            if ($video->isValid()) {
+                // Xóa video cũ nếu có
+                if ($product->video_path && Storage::disk('public')->exists($product->video_path)) {
+                    Storage::disk('public')->delete($product->video_path);
+                }
+                $path = $video->store('videos/products', 'public');
+                $updateData['video_path'] = $path;
+            }
         }
 
         \Log::info('Updating product', ['id' => $id, 'data' => $updateData]);
